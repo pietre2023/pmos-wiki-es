@@ -1,7 +1,7 @@
-Portar a un nuevo dispositivo
-Saltar a navegaciónSaltar a buscar
+Portar un nuevo dispositivo
 
 Contenido
+
 1	Introducción
 2	Preparación
 3	Requisitos
