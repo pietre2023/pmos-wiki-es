@@ -1,0 +1,563 @@
+Portar a un nuevo dispositivo
+Saltar a navegaciónSaltar a buscar
+
+Contenido
+1	Introducción
+2	Preparación
+3	Requisitos
+3.1	Entorno de desarrollo
+3.2	Conocimiento
+3.3	Dispositivo de destino
+4	Inicialización
+4.1	método de destello
+4.2	Interfaces
+4.3	Inicio sesión
+5	Paquete de núcleo
+5.1	Archivo APKBUILD
+5.2	Código fuente
+5.3	Versión del núcleo
+5.4	Configuración predeterminada
+5.5	Descargar fuentes y actualizar sumas de verificación
+5.6	Configuración del núcleo
+5.6.1	Eliminar parches fallidos
+5.6.2	Hacer kconfig check feliz
+5.7	Compilación del núcleo
+5.8	Encuentra el mensaje de error
+5.9	obtener un parche
+5.9.1	De los ports de postmarketOS
+5.9.2	de otra parte
+5.10	Eliminando la dependencia de python2
+5.11	Cambiando compilador
+5.11.1	Usando GCC6
+5.11.2	Usando GCC4
+5.11.3	usando sonido
+5.12	Paquete específico del dispositivo
+6	¡Estamos felices de ayudarte!
+7	Documentación
+8	Instalación
+9	Brillante
+10	Alternativas al parpadeo normal
+11	Red USB
+12	upstreaming
+13	Mostrar
+14	Pantalla táctil
+15	Cambiando tu instalación
+15.1	Instalar paquetes sobre SSH
+15.2	Creación de una nueva imagen del sistema
+15.3	Núcleo
+16 Cifrado de disco completo: compatibilidad con osk-sdl
+17 Temas avanzados
+
+Introducción
+Esta es una guía paso a paso hecha para que pueda migrar postmaketOS a un nuevo dispositivo.
+
+Nota El principiante habla con los principiantes: ¡Eche un vistazo al resumen para tener en cuenta todo el proceso!
+Los pasos principales son:
+
+Configure el entorno de desarrollo postmarketOS en su computadora.
+
+Cree un kernel específico de dispositivo y un paquete de sistema específico de dispositivo para su dispositivo, o utilice un kernel de línea principal (cercano a) y un paquete de sistema específico de dispositivo.
+
+Instala el sistema y adáptalo según tu dispositivo y uso.
+
+Para obtener ayuda, simplemente conéctese al canal principal de Matrix/IRC y amablemente envíe su pregunta. ¡La gente está encantada de responder a sus preguntas!
+
+Antes de seguir esta guía, identifique qué SoC (Sistema en un chip) tiene el dispositivo que desea portar. Tenemos guías principales dedicadas para los siguientes SoC:
+
+Snapdragon 410/412 MSM8916/Snapdragon 615/616 MSM8939
+Snapdragon 820/821 MSM8996
+Snapdragon 845 SDM845
+
+Incluso si su SoC no aparece aquí, puede tener un buen soporte de línea principal. Puede intentar encontrar el suyo en SoC Communities y solicitar ayuda en la línea principal de postmarketOS en Matrix/IRC .
+
+Si su dispositivo es compatible con un kernel de Linux principal (cercano), es preferible portarlo usando ese kernel. Podrá lograr un mayor soporte de hardware (GPU, módem, etc.) y al mismo tiempo tener un software más actualizado. En algunos casos, incluso puede ser más fácil. Sin embargo, si su dispositivo no es compatible con ningún núcleo principal (cercano), siga leyendo esta guía.
+
+Preparación
+
+Nota ¡Utilice un dispositivo de repuesto para experimentar con postmarketOS! No podrá usar las funciones típicas del teléfono en este momento, como hacer llamadas, enviar mensajes de texto o usar Bluetooth. Aunque todo ha sido probado, no hay garantía de que no rompas tu dispositivo.
+
+Busque en la página Dispositivos su dispositivo para evitar el trabajo duplicado. También busque en la wiki su dispositivo y verifique los enlaces a las sucursales existentes. Si su dispositivo de destino tiene una CPU x86-64, es posible que pueda usar el port de dispositivo UEFI x64 genérico .
+
+Únase a Matrix/IRC para obtener ayuda cuando esté atascado.
+
+Requisitos
+
+Entorno de desarrollo
+
+Para configurar un entorno de desarrollo, necesitará un sistema GNU/Linux capaz de realizar compilaciones y ejecutar pmbootstrap, nuestra herramienta de desarrollo e instalación. Si no tiene instalado un sistema operativo basado en Linux, es posible que desee configurar primero una máquina virtual con VirtualBox.
+
+Su sistema GNU/Linux debe tener:
+
+Unos pocos gigabytes de espacio libre
+
+Linux kernel 3.17 o posterior (ya que los kernels de Linux anteriores no son compatibles con getrandomsyscall).
+
+Conocimiento
+
+Se recomienda que al menos sepa un poco cómo usar las distribuciones de Linux y cómo crear software, ya que el proceso de portabilidad es un poco más difícil que simplemente ejecutar algunos comandos.
+
+Dispositivo de destino
+
+Si su dispositivo de destino tiene un procesador ARM, debe tener una unidad de punto flotante (FPU). Si el dispositivo tiene al menos una CPU ARMv7, debería tener una FPU; sin embargo, solo algunas CPU ARMv6 tienen una.
+
+La mayoría de los teléfonos inteligentes tienen una FPU. De los primeros 80+ ports que comenzamos, solo dos teléfonos carecían de FPU: el HTC Wildfire de 2010 ( #1203 ) y el Vodafone 858 Smart de 2011 ( #1592 )). Ambos teléfonos usan el MSM7225, un SoC ARMv6. Si su teléfono se fabricó antes de 2012, asegúrese de que tenga una FPU .
+
+Inicialización
+
+Instale pmbootstrap , nuestra herramienta ligera de desarrollo e instalación postmarketOS. Luego ejecuta lo siguiente:
+
+$ pmbootstrap init
+
+Ubicación de la ruta de 'trabajo'. Se crearán múltiples chroots (nativos, arco de dispositivo, rootfs de dispositivo) allí. 
+Ruta de trabajo [/home/user/.local/var/pmbootstrap]:
+Escriba el nombre del código de su dispositivo para iniciar un nuevo port y responda cada solicitud. Para obtener ayuda, consulte cómo encontrar información específica del dispositivo .
+
+Dispositivo de destino (ya sea uno existente o uno nuevo para portar).
+
+Disponibles (60): asus-flo, asus-grouper, fairphone-fp2, ...
+Dispositivo [samsung-i9100]: ejemplo de wiki
+Está a punto de hacer un nuevo port de dispositivo para 'wiki-example'.
+¿Continuar? (s/n) [s]:
+Arquitectura del dispositivo (armhf/armv7/aarch64/x86_64/x86) [armhf]: armv7
+¿Quién produjo el dispositivo (por ejemplo, LG)?
+Fabricante: Samsung
+¿Cuál es el nombre oficial (por ejemplo, Google Nexus 5)?
+Nombre: Wiki Ejemplo
+¿El dispositivo tiene un teclado de hardware? (t/n) [n]:
+¿El dispositivo tiene una tarjeta SD u otro medio de almacenamiento externo? (t/n) [n]:
+método de destello
+
+Depende del protocolo de flasheo que viene con el dispositivo. Para la mayoría de los dispositivos Android, esto es fastboot, algunos modelos de Samsung necesitan heimdall(que es compatible con "Odin") y los teléfonos Nokia basados ​​en Maemo/MeeGo funcionan con 0xffff. Si no sabe cuál es, intente ingresar al gestor de arranque en su dispositivo y verifique si dice "Modo Fastboot" o "Modo Odin". La mayoría de las veces, eso se puede hacer presionando la Volume Downtecla cuando se está iniciando. En caso de que no pueda resolverlo, intente buscar en Internet; incluso puede haber videos en YouTube sobre cómo hacerlo si tiene suerte.
+
+Para obtener más información, consulte la página wiki sobre los métodos flash de Deviceinfo .
+
+¿Qué método flash admite el dispositivo?
+Método flash (fastboot/heimdall/0xffff) [fastboot]:
+Dependiendo de su selección, pmbootstrappuede pedirle que analice un boot.imgarchivo para obtener los valores de compensación necesarios para el método flash. Obtenga el adecuado para su dispositivo desde TWRP ( twrp-*.img), LineageOS ( boot.imgdentro del archivo zip) o extrayéndolo desde un Android en ejecución . Si no puede encontrar ninguno, puede omitir este paso por ahora simplemente presionando la tecla de retorno.
+
+Puede analizar un archivo boot.img en funcionamiento conocido para completar automáticamente la información intermitente para el archivo de información de su dispositivo. Especifique la ruta a una imagen o presione regresar para omitir este paso (puede hacerlo más tarde con 'pmbootstrap bootimg_analyze').
+
+Ruta: /home/usuario/Descargas/twrp-3.2.0-0-mako.img
+
+NOTA: Se le pedirá su contraseña de sudo, para que podamos configurar un chroot para extraer y analizar su archivo boot.img
+(nativo) instalar base alpine
+(nativo) archivo de instalación unpackbootimg
+Interfaces
+Nota No elija Plasma Mobile, Phosh, Sway si usa el kernel descendente para la migración.
+
+Le recomendamos que comience xfce4primero, porque si bien no es realmente adecuado para un teléfono, tiene muchas posibilidades de funcionar debido a que usa X.Org, que tiene un backend fbdev a diferencia de la mayoría de los compositores de Wayland que requieren DRM (Representación directa). Manager, que generalmente solo funciona correctamente en kernels cercanos a la línea principal). Después de que funcione, siéntase libre de probar otra interfaz (pero espere que no necesariamente funcione de inmediato).
+
+Nombre de usuario [usuario]:
+Interfaces de usuario disponibles (5):
+* none: Sin entorno gráfico
+* hildon: (X11) IU ligera GTK+2 (optimizada para pantallas táctiles de un solo toque)
+* luna: (Wayland) interfaz de usuario webOS, portada del proyecto LuneOS (aún no funciona)
+* plasma-mobile: (Wayland) Variante móvil de KDE Plasma, optimizada para pantalla táctil
+* weston: (Wayland) Compositor de referencia (demostración, no es una interfaz de teléfono)
+* xfce4: (X11) Escritorio ligero GTK+2 (se recomienda lápiz óptico)
+Interfaz de usuario [xfce4]:
+Opciones de compilación: trabajos paralelos: 3, caché por arco: 5G
+¿Cámbialos? (t/n) [n]:
+
+Paquetes adicionales que se instalarán en rootfs. Especifíquelos en una lista separada por comas (por ejemplo: vim, archivo) o "ninguno"
+Paquetes adicionales [ninguno]:
+
+La zona horaria de su anfitrión: Europa/Londres
+¿Usar esta zona horaria en lugar de GMT? (s/n) [s]:
+
+ADVERTENCIA: Las aplicaciones en los chroots no se actualizan automáticamente.
+¡Ejecute 'pmbootstrap zap' para eliminar todos los chroots una vez al día antes de trabajar con pmbootstrap!
+Solo toma unos segundos y todos los paquetes se almacenan en caché.
+¡Hecho!
+
+Inicio sesión
+
+Abra una segunda terminal y ejecute el siguiente comando para ver el registro detallado (como la salida del compilador). Siempre que informe que algo no funciona, adjunte la salida de registro
+detallada de esta ventana.
+
+$ pm registro de arranque
+
+Paquete de núcleo
+
+Si bien el objetivo es utilizar un núcleo de línea principal para todos los dispositivos a largo plazo, por lo general esto no se puede hacer en un solo paso cuando se realiza la migración a un nuevo dispositivo. 
+Mientras tanto, lo que hacemos es enviar una bifurcación del kernel de Linux, que se sabe que funciona con este dispositivo (por ejemplo, desde Android).
+
+Nota	Si su dispositivo no tiene una bifurcación del kernel de Linux que funcione (por ejemplo, porque es iPhone o Windows Phone ), esta guía no funcionará de manera sencilla.
+Eche un vistazo a cómo se portaron dispositivos similares al suyo, cree un kernel genérico o solicite ayuda en el chat .
+
+Los pasos a continuación son los cambios directos que necesita para compilar su kernel. Para obtener más información, consulte el artículo del paquete específico del kernel descendente .
+
+Archivo APKBUILD
+Nota	APKBUILD no tiene nada que ver con el formato de aplicación de Android!
+APKBUILDEl archivo es un script utilizado para construir un paquete. Hay dos APKBUILD que debe editar: para dispositivos y paquetes de Linux relacionados con su port. 
+Los APKBUILD ubicados en las carpetas de los paquetes.
+
+¿Dónde encontrar carpetas de paquetes relacionados con el dispositivo?
+
+En caso de que hayas clonado pmbootstrap desde git:
+
+$workdir/aports/device/testing/device-wiki-example/APKBUILD
+$workdir/aports/device/testing/linux-wiki-example/APKBUILD
+
+En caso de que no hayas clonado pmbootstrap desde git:
+
+$workdir/cache_git/pmaports/device/testing/device-wiki-example/APKBUILD
+$workdir/cache_git/pmaports/device/testing/linux-wiki-example/APKBUILD
+
+Donde $workdir es la ruta que proporcionó en el primer paso del pmbootstrap initproceso y "wiki-example" por la marca y el nombre en clave que proporcionó allí.
+
+
+Código fuente
+
+Encuentre el código fuente de la bifurcación del núcleo en funcionamiento conocida. Si es posible, intente encontrar un kernel ampliamente utilizado, por ejemplo, de LineageOS. 
+La versión del kernel también es importante, al momento de escribir (abril de 2020), el número de versión del kernel más bajo que hemos empaquetado es 3.0.x. 
+Es posible que se ejecuten núcleos aún más antiguos (con versiones antiguas de GCC ), pero incluso si logra que arranquen, es probable que tenga problemas en el futuro.
+
+Una vez que tenga su kernel, ajuste la # Sourcesección en el linux-wiki-example/APKBUILDarchivo. Para los kernels de LineageOS, solo necesitará cambiar _repositoryy _commitvariables. 
+Por lo general, tiene sentido usar una confirmación de la rama actualizada más recientemente.
+ Por ejemplo, si el repositorio del kernel está en https://github.com/LineageOS/android_kernel_motorola_ghost.git, usaría _repository="android_kernel_motorola_ghost" y _
+ commit="c4914db2f65ef63548b0af5d7b37d131581c9c62"
+ (busque la confirmación haciendo clic en c4914db2 junto a "Última confirmación" en la esquina superior derecha del cuadro de directorios).
+
+Si su kernel no está en un repositorio de LineageOS sino en otro lugar, también debe cambiar la URL en source consecuencia, por ejemplo, 
+https://github.com/jmrohwer/$_repository/archive/$_commit.tar.gz 
+si el kernel está en https://github.com/jmrohwer/TF101-GNU-kernel. 
+Todavía necesita configurar _repositoryy _commit como se describe anteriormente.
+
+Si su kernel solo está disponible como archivo (zip, tarball, etc.), puede descomprimirlo y usarlo 
+pmbootstrap build linux-wiki-example --src=/path/to/extracted/kernel/source por ahora.
+Más tarde, cuando sea el momento de subir su trabajo a los repositorios oficiales de postmarketOS para que todos puedan usarlo, 
+hable con nosotros para que podamos publicar el kernel en un buen lugar.
+
+No bifurque el kernel y agregue parches allí. Ya hay suficientes bifurcaciones del kernel de Linux, y es casi imposible entender qué repositorio del kernel tiene qué parches aplicados.
+ No empeoremos la situación creando otra bifurcación con parches aleatorios en la parte superior solo para que se compile con postmarketOS. En su lugar, señale el núcleo que encontró. 
+ Todos los parches específicos de postmarketOS deben aplicarse como archivos de parche en el mismo directorio que APKBUILD. 
+ Cómo se hace esto exactamente se describe más adelante en la guía de portabilidad. Al hacerlo así, evitamos descargar las enormes fuentes del kernel cada vez que se aplica un nuevo parche 
+ (recuerde que no todo el mundo tiene conexiones rápidas a Internet) y lo hace mucho más transparente, ya que los parches reales aparecen en las revisiones de código. .
+
+Considere la confiabilidad de la fuente del núcleo. Si existe alguna posibilidad de que la fuente desaparezca, se debe realizar una copia de seguridad y utilizarla en lugar de la fuente original.
+ Consulte Cómo hacer una copia de seguridad adecuada de los núcleos posteriores para obtener instrucciones.
+
+_flavor = "wiki-example"  # asegúrese de que esté en forma de <vendor-codename>, por ejemplo, motorola-ghost
+
+# Source 
+_repository = "(¡CÁMBIAME!)"  # por ejemplo, android_kernel_motorola_ghost 
+_commit = "ffffffffffffffffffffffffffffffffffffffffffff"  # por ejemplo, c4914db2f65ef63548b0af5d7b37d131581c9c62 
+_config = "config- $_flavor . $arch " 
+fuente = " 
+$pkgname - $_tar : //tar: github.com/LineageOS/ $_repository /archive/ $_commit .tar.gz $_config    
+    
+    gcc7-give-up-on-ilog2-const-optimizations.patch 
+    gcc8-fix-put-user.patch 
+" 
+builddir = " $srcdir / $_repository - $_commit "
+
+Versión del núcleo
+
+En el repositorio con el código fuente del kernel, encontrará un archivo Makefile. Abra este archivo y ajuste pkgveren el núcleo APKBUILDa la información de las VERSIONvariables PATCHLEVELy SUBLEVEL(por ejemplo, 3.4.0 ).
+
+Configuración predeterminada
+
+A continuación, deberá encontrar la configuración del kernel que se utiliza para compilar esa fuente del kernel para su dispositivo.
+Descárguelo y guárdelo como aports/device/testing/linux-wiki-example/config-wiki-example.armhf(reemplazar wiki-example y armhf).
+
+$ wget https://github.com/LineageOS/lge-kernel-mako/raw/cm-14.1/arch/arm/configs/lineageos_mako_defconfig
+$ mv lineageos_mako_defconfig aports/device/testing/linux-wiki-example/config-wiki- ejemplo.armhf
+
+Si su dispositivo es de 64 bits (aarch64), reemplácelo .armhf con .aarch64
+
+Descargar fuentes y actualizar sumas de verificación
+
+Utilice el comando de suma de comprobación. No solo generará las sumas de verificación de todos los archivos fuente, sino que también los descargará en caso de que aún no se hayan descargado.
+Si este comando falla, lo más probable es que la URL de descarga no sea válida y deba ajustarse nuevamente APKBUILD. Otra causa podría ser que no se pudo encontrar el archivo defconfig 
+(por ejemplo, porque se guardó con un nombre de archivo incorrecto). La URL de descarga real (con todas las variables reemplazadas) y el progreso de la descarga están visibles en la ventana de registro.
+
+$ pmbootstrap suma de comprobación linux-wiki-example
+
+Configuración del núcleo
+Nota Si pmbootstrap arroja un error aquí, ¡debe eliminar el parche de ejemplo !
+
+El comando mágico, que le permite cambiar la configuración del núcleo es pmbootstrap kconfig edit. No intente cambiar manualmente el archivo defconfig, porque solo ejecutando menuconfig, las dependencias se resolverán correctamente. menuconfigsiempre se ejecuta en el kernel con todos los parches aplicados, por lo que lo ejecutaremos una vez para ver si primero necesitamos eliminar los archivos de parche.
+
+Si no hay errores, puede salir de menuconfig con ESC-ESC y pasar a hacer que kconfig check sea feliz.
+
+Eliminar parches fallidos
+Encontrará algunos parches de ejemplo ya en el paquete del núcleo generado. Cuando un parche no se aplica correctamente, obtendrá algo como lo siguiente en la ventana de registro 
+(desplácese hacia arriba, el error está arriba de la ^^^línea).
+
+$ pmbootstrap kconfig edit
+>>> linux-wiki-example: Desempaquetando /var/cache/distfiles/linux-wiki-example-ffff.tar.gz...
+>>> linux-wiki-ejemplo: 01_msm-fix-perf_trace_counters.patch
+parchear el archivo arch/arm/mach-msm/perf_trace_counters.h
+Hunk #1 tuvo éxito en 158 (compensación de 37 líneas).
+>>> linux-wiki-ejemplo: 02_this_patch_fails.patch
+parchear el archivo arch/arm/mach-msm/perf_trace_counters.h
+Hunk #1 FALLÓ en 121.
+1 de cada 1 trozo FALLÓ: guardar los rechazos en el archivo arch/arm/mach-msm/perf_trace_counters.h.rej
+>>> ERROR: linux-wiki-example: todo falló
+
+Cuando esto suceda, elimine el parche defectuoso de la source=variable en el archivo APKBUILDy elimine el archivo del parche de la misma carpeta. 
+
+Finalmente, corrija las sumas de verificación e intente editar kconfig nuevamente.
+
+$ nano aports/device/testing/linux-wiki-example/APKBUILD # remove from source 
+$ rm aports/device/testing/linux-wiki-example/02_this_patch_fails.patch
+$ pmbootstrap checksum linux-wiki-example
+$ pmbootstrap kconfig edit
+Hacer kconfig check feliz
+Nota Considere usar kconfig edit -xpara obtener una GUI en lugar de la interfaz de terminal. Detalles:pmbootstrap kconfig edit -h
+Verifique lo que necesita ajustar en la configuración del kernel antes de que pueda usarse con postmarketOS. Sigue cambiando las opciones , hasta que todo pase.
+
+$ pmbootstrap kconfig comprobar
+$ pmbootstrap kconfig editar
+$ pmbootstrap kconfig comprobar
+
+Compilación del núcleo
+
+El siguiente paso es la compilación del núcleo, que fallará varias veces antes de que funcione. Ejecútelo una vez para ver dónde falla.
+
+$ pmbootstrap build linux-wiki-ejemplo
+
+Lo más probable es que usemos una versión más moderna de GCC en comparación con la compilación del núcleo de su dispositivo (lo cual es bueno, no queremos software obsoleto). Sin embargo, esto significa que probablemente necesitará parchear su núcleo antes de que se compile correctamente. No se asuste, le hablaremos. Pero en el improbable caso de que todo transcurra sin problemas, sigue leyendo aquí .
+
+Encuentra el mensaje de error
+
+Nota Consejo: puede utilizar pmbootstrap logpara comprobar el registro rápidamente.
+Para encontrar el mensaje de error, debe abrir un archivo de registro en su editor de texto favorito, como
+
+$ nano $( carpeta de trabajo de pmbootstrap ) /log.txt
+y use la búsqueda para encontrar mensajes de error para la última ejecución de compilación (contienen error:o Error palabra).
+
+Ejemplos de errores:
+
+En el archivo incluido en arch/arm/mach-msm/perf_trace_counters.h:127:0,
+de arch/arm/mach-msm/perf_trace_counters.c:14:
+include/trace/define_trace.h:79:43: error fatal: ./perf_trace_counters.h: No existe tal archivo o directorio
+drivers/incorporados.o: En la función `.LANCHOR1':
+msm_iommu_sec.c:(.data+0x9298): referencia indefinida a `kgsl_iommu_sync_lock'
+msm_iommu_sec.c:(.data+0x929c): referencia indefinida a `kgsl_iommu_sync_unlock'
+Makefile: 877: la receta para el objetivo '.tmp_vmlinux1' falló
+hacer: *** [.tmp_vmlinux1] Error 1
+Es posible borrar el archivo de registro justo antes de la compilación cuando presiona ctrl + c en la ventana de registro y usa log -c:
+
+(salida de registro anterior aquí) 
+^C 
+$ pmbootstrap log -c
+
+Otro truco para encontrar el mensaje de error realmente rápido es abrir log.txt con less y usar el modo de seguimiento (presione F mientras está en less o abra menos con la +Fopción: less +F log.txt). 
+Esto hace que les sse comporte como tail -f. Cuando ocurre un error, puede salir del modo de seguimiento presionando ctrl + c y usar ? para realizar una búsqueda inversa de la salida (por ejemplo: ?error). 
+Presione F para volver a habilitar el modo de seguimiento.
+
+obtener un parche
+
+De los ports de postmarketOS
+
+Es muy probable que ya nos hayamos encontrado con el mismo problema con otro kernel. Tome (partes de) el nombre del archivo ofensivo y búsquelo dentro de aports/device.
+
+$ grep -r 'perf_trace_counters\.c' aports/device/
+aports/device/testing/linux-lg-mako/01_msm-fix-perf_trace_counters.patch: Compilación en árbol para arch/arm/mach-msm/perf_trace_counters.c fue 
+aports/device/testing/linux-lg-mako/01_msm-fix-perf_trace_counters.patch: from arch/arm/mach-msm/perf_trace_counters.c:14 $ grep -r ' 
+msm_iommu_sec ' aports /device/
+aports/device/ testing/linux-lg-mako/02_gpu-msm-fix-gcc5-compile.patch:msm_iommu_sec.c:(.data+0x9298): referencia indefinida a `kgsl_iommu_sync_lock' aports/device/testing/linux-lg-mako/ 
+02_gpu -msm-fix-gcc5-compile.patch:msm_iommu_sec.c:(.data+0x929c): referencia indefinida a `kgsl_iommu_sync_unlock'
+
+Cuando haya un resultado, copie el archivo de parche que encontró en su nuevo paquete de kernel, agréguelo a la sourcevariable en APKBUILDe intente compilar nuevamente.
+
+$ cp aports/device/testing/linux-lg-mako/01_msm-fix-perf_trace_counters.patch aports/device/testing/linux-wiki-example/
+$ nano aports/device/testing/linux-wiki-example/APKBUILD # agregar a la fuente 
+$ pmbootstrap checksum linux-wiki-example
+$ pmbootstrap build linux-wiki-example
+
+Obtener un parche de otra parte
+
+Inicie su motor de búsqueda favorito y busque en todos los resultados el mensaje de error y sus variaciones. La ""función de la mayoría de los motores de búsqueda es útil,
+por lo que busca una cadena exacta y no palabras sueltas. Consultas de ejemplo para los mensajes de error anteriores:
+
+include/trace/define_trace.h: fatal error: ./perf_trace_counters.h: "No such file or directory"
+linux "./perf_trace_counters.h: No such file or directory"
+android "undefined reference to `kgsl_iommu_sync_unlock'"
+
+En la mayoría de los casos, esto generará un parche que puede aplicar a su núcleo. Guarde lo que ha encontrado como un archivo de parche justo al lado APKBUILD de su nuevo paquete de kernel. 
+Las publicaciones de la lista de correo generalmente tienen el formato de un archivo de parche y se pueden usar directamente, mientras que las confirmaciones o las solicitudes de extracción (PR) en GitHub 
+se pueden descargar como parche cuando se agrega a la URL (por ejemplo, .patchconfirmación , parche ) .
+
+Si lo que encontró en la web no se puede usar como archivo de parche directamente (por ejemplo, a veces los archivos están en otras carpetas), pero entendió cómo necesitaría parchear la fuente 
+(a partir de los resultados de búsqueda o simplemente porque ya lo sabía) , siga esta guía .
+
+Los archivos de parche pueden contener texto arbitrario antes de la primera línea ---del archivo. Utilice este espacio para enlazar a la fuente donde encontró un parche (en caso de que sea de Internet) 
+y para pegar el mensaje de error que corrige su parche (para que sea más fácil de encontrar para otras personas).
+
+Después de crear el archivo de parche y agregar la URL de origen y el mensaje de error, ingrese el nombre sourcedel archivo APKBUILDy vuelva a intentarlo.
+
+$ nano aports/device/testing/linux-wiki-example/03_description-here.patch
+$ nano aports/device/testing/linux-wiki-example/APKBUILD
+$ pmbootstrap checksum linux-wiki-example
+$ pmbootstrap build linux-wiki-example
+
+No podemos prometer nada, pero no debería necesitar hacer esto más de 2 veces más o menos antes de que finalmente se complete la compilación del kernel.
+
+Eliminando la dependencia de python2
+
+En algunos núcleos posteriores, se ejecutan extraños scripts de python como parte del proceso de compilación. Esto es especialmente problemático para los scripts de python2, ya que python2 se eliminó en 
+Alpine 3.16 (postmarketOS v22.06). Entonces, si la compilación de su kernel falla con un mensaje de error que menciona que no se encontró "python2", aquí hay algunos consejos para deshacerse de la dependencia:
+
+Si el programa python2 es drvgen de mediatek: esto es para generar un archivo "cust.dtsi". Simplemente incluya el archivo "cust.dtsi" que generaría y no llame a drvgen durante la compilación. 
+Puede obtener el archivo consultando la rama v21.12 de pmaports.git, agregando su paquete de kernel allí, agregando python2 para hacer que dependa temporalmente en APKBUILD e iniciando la compilación. 
+Una vez que pasó la parte donde se detendría con el error python2, el archivo cust.dtsi debería estar disponible. Cree un parche que lo agregue y deshabilite drvgen, busque drvgen en pmaports.git master
+para encontrar parches similares.
+
+Si el programa python2 es mkdtimg (o mkdtboimg), debería poder usar la versión python3 que hemos empaquetado en android-mkdtboimg en su lugar. Use "git grep" para encontrar parches similares,
+por ejemplo device/unmaintained/linux-xiaomi-cepheus-downstream/0005-Use-real-mkdtimg-don-t-use-python2-one.patch, .
+
+Cambiando compilador
+
+Usando GCC6
+
+Si no puede hacer que su kernel compile o arranque con el último GCC de Alpine, también puede intentar usar GCC6 en su lugar .
+
+Usando GCC4
+
+Como GCC4 se introdujo recientemente en los repositorios de postmarketOS, puede seguir el procedimiento anterior para GCC6 y reemplazar todas las apariciones de gcc6 con gcc4 y agregar gcc4
+ (armv7/armhf/...)-gcc4 a su lista de dependencias.
+
+usando sonido
+
+Para usar Clang como compilador, debe hacer lo siguiente en el APKBUILD del paquete del kernel:
+
+Agregar clangamakedepends
+Añade estas líneas:
+CC = "sonido" 
+HOSTCC = "sonido"
+Paquete específico del dispositivo
+Abra el archivo deviceinfo en un editor (replace wiki-example).
+
+$ ports nano/dispositivo/pruebas/dispositivo-wiki-ejemplo/infodispositivo
+Ahora ajusta:
+
+deviceinfo_screen_width
+deviceinfo_screen_height
+
+Si su dispositivo usa almacenamiento UFS, es posible que deba configurar el tamaño del sector de la imagen rootfs. El valor predeterminado es 512b, pero algunos dispositivos usan 4096b. 
+En TWRP, verifique el tamaño de su sector a través de la terminal:
+
+$ fdisk -l /dev/bloque/sd* | grep -i "tamaño del sector"
+
+Si los tamaños de sector son 4096 bytes, agregue la siguiente línea al deviceinfoarchivo:
+
+deviceinfo_rootfs_image_sector_size="4096"
+
+Puede leer más sobre los tamaños de los sectores en este hilo de solicitud de extracción.
+
+En caso de que se le haya pedido boot.imganalizar y se haya saltado esa sección durante el inicio : puede ejecutar pmbootstrap bootimg_analyze path/to/boot.imgpara obtener los valores correctos para las deviceinfo_
+flash_offset_líneas ahora. Completar manualmente también funciona, pero es propenso a errores y, por lo tanto, no se recomienda.
+
+Consulte la referencia de información del dispositivo para obtener una lista de todas las variables disponibles y sus significados. El artículo del paquete específico del dispositivo explica la personalización avanzada del APKBUILD.
+
+Cree sumas de verificación y compile el paquete del dispositivo una vez para asegurarse de que no contenga errores en este punto (no lo hicimos antes, porque nos habríamos pmbootstrap quejado de la invalidez pkgverdel paquete del kernel):
+
+$ pmbootstrap checksum dispositivo-wiki-ejemplo
+ $ pmbootstrap build dispositivo-wiki-ejemplo
+Nota Si recibe un dtb files not found error, puede deberse a que usó el número de modelo del dispositivo en lugar del nombre del código, consulte el problema n.º 35 . Para solucionar el problema, cambie el nombre del  o simplemente cree un nuevo port con el nombre correcto.
+
+¡Estamos felices de ayudarte!
+Si te quedas atascado, estaremos encantados de ayudarte en el chat y en el seguimiento de problemas . Cuando solicite ayuda, incluya siempre el APKBUILD que ha escrito y cualquier parche personalizado que haya aplicado, así como el mensaje de error que ha recibido de pmbootstrap log.
+
+Documentación
+Esta es una wiki, así que ajuste todo lo que no esté lo suficientemente detallado o que le haya ayudado con la migración.
+
+Si ha hecho algún progreso con un nuevo port, cree una página de dispositivo para documentar sus hallazgos. Incluso si no llegaste muy lejos y el kernel no se compila, esto ayudará a otros a continuar con tu trabajo. Para crear una página de dispositivo, deberá registrar una cuenta en este wiki. (No es necesario que proporcione una dirección de correo electrónico).
+
+Instalación
+Nota	Si obtiene un error de "no queda espacio en el dispositivo", infórmelo en el n.º 928 .
+Para instalar en la partición del sistema de un archivo de imagen, ejecute lo siguiente:
+
+$ pmbootstrap instalar
+Si desea instalar en una tarjeta SD, insértela en su PC y ejecute lo siguiente. Reemplace mmcblk0 con el nombre real del dispositivo ( lsblkes útil para averiguar el nombre correcto del dispositivo). No necesita formatearlo o particionarlo de antemano, pmbootstrapse encargará de eso.
+
+$ pmbootstrap install --sdcard = /dev/mmcblk0
+Brillante
+Antes de que pueda ejecutar cualquier comando flash, debe poner su dispositivo en el modo de flasheo/cargador de arranque. Por lo general, se hace presionando Bajar volumen y Encender simultáneamente cuando el dispositivo está apagado, pero puede variar según el dispositivo. Para obtener más información, consulte la página específica para su dispositivo en LineageOS Wiki .
+
+Si desea instalar en la partición del sistema, ejecute lo siguiente (¡no para la instalación de la tarjeta SD!):
+
+$ pmbootstrap flasher flash_rootfs
+En caso de que la partición de su sistema sea demasiado pequeña para la imagen generada (por ejemplo, porque eligió Plasma Mobile como interfaz de usuario), también es posible flashear a otra partición. Solo asegúrese de borrar cualquier instalación anterior de postmarketOS en otras particiones, porque el script de inicio comenzará con la primera que encuentre. (Para eliminar una versión anterior, use ddo simplemente instale el sistema operativo conocido, por ejemplo, Android). Está previsto el uso de múltiples particiones con LVM ( #60 ).
+
+$ pmbootstrap flasher flash_rootfs --partición de datos de usuario
+Si tiene un dispositivo que funciona con fastboot, puede iniciar el kernel ahora sin flashearlo:
+
+$ pmbootstrap arranque intermitente
+De lo contrario, deberá actualizar el kernel a la partición de arranque del dispositivo:
+
+$ pmbootstrap flasher flash_kernel
+Alternativas al parpadeo normal
+Si el método de flasheo no funciona, también es posible exportar todos los archivos de imagen generados a un directorio específico (con enlaces simbólicos), para que pueda flashearlo manualmente con su sistema host Linux (o incluso en Windows con flashers patentados como Odin, si esta es la única forma en que funciona para usted):
+
+$ exportación
+ pmbootstrap $ exportación pmbootstrap --odin
+Para dispositivos basados ​​en Android, puede hacer una instalación zip de recuperación .
+
+Cuando todo lo demás falla, es posible que tenga éxito con la instalación a través de netcat o el arranque a través de NFS .
+
+Red USB
+Si tiene suerte, su pantalla puede dar algunas pistas de que ha iniciado en pmOS. De lo contrario, no se desanime, es posible que los gráficos de su dispositivo aún no estén configurados correctamente. Los siguientes pasos son ver si puede conectarse al dispositivo a través de SSH a través de USB (o si eso falla, a través de telnet). Consulte las páginas Proceso de arranque e Inspección de initramfs para obtener más detalles.
+
+Es bastante fácil darle a su teléfono acceso a Internet a través de USB cuando su PC está conectada a Internet.
+
+En caso de que parezca que su dispositivo ni siquiera arrancó, eche un vistazo a Troubleshooting:boot .
+
+upstreaming
+Tan pronto como la red USB sea funcional, o tenga otra indicación de que el arranque del dispositivo funciona correctamente, es hora de subir su trabajo al repositorio oficial de pmaports . De esta manera, otras personas pueden beneficiarse de su trabajo y aprovecharlo.
+
+Consulte el artículo de flujo de trabajo de git para obtener instrucciones detalladas.
+
+Para recibir notificaciones de trabajos que afectan a su dispositivo, le recomendamos que se agregue a los archivos de GitLab CODEOWNERS en pmaports, use el siguiente formato como ejemplo:
+
+dispositivo/*/dispositivo-oneplus-enchilada/ @calebccff
+dispositivo/*/dispositivo-oneplus-fajita/ @calebccff
+dispositivo/*/firmware-oneplus-sdm845/ @calebccff
+dispositivo/*/linux-postmarketos-qcom-sdm845/ @sdm845-mainline
+Mostrar
+Para hacer que la pantalla funcione en primer lugar, lea Solución de problemas: pantalla y ajuste de sysfs .
+
+Después de que funcione, tome algunas fotos bonitas y agréguelas a la página wiki de su dispositivo. Si tiene una cuenta de Reddit, considere publicarlas también en /r/postmarketOS .
+
+Pantalla táctil
+
+Para que funcione, visite la página de calibración de pantalla . Si tiene problemas, visite la solución de problemas de la pantalla táctil .
+
+Cambiando tu instalación
+
+Instalar paquetes sobre SSH
+
+Obtenga acceso a Internet a través de USB (más fácil) o Wifi , luego use el administrador de paquetes para instalar nuevos paquetes:
+
+$ apk añadir hola-mundo
+
+También puede alojar paquetes que haya creado usted mismo desde su PC. Solo asegúrese de aumentar la versión del paquete cuando cree su propia versión de un paquete que ya existe. De lo contrario, el administrador de paquetes no puede saber que su paquete es el más nuevo y debe instalarse. Verifique la salida de apkpara ver si realmente está instalando el paquete o no.
+
+Creación de una nueva imagen del sistema
+Cada vez que reconstruya un paquete (o elija uno nuevo para instalarlo de forma predeterminada en pmbootstrap init), debe asegurarse de que el paquete esté realmente instalado en el chroot 
+desde el que se genera la imagen del sistema. Logre que al ejecutarlo pmbootstrap installnuevamente, debería actualizar todos los paquetes obsoletos. Preste atención a la salida de pmbootstrap log 
+para ver si realmente se ha actualizado. Si algo no funcionó como se esperaba, siempre puede pmbootstrap zap usar chroot para comenzar de nuevo con una instalación limpia.
+
+Núcleo
+
+Una forma sencilla de volver a compilar su kernel (por ejemplo, porque desea cambiar la configuración de su kernel) y actualizarlo en su dispositivo es ejecutando los siguientes comandos:
+
+$ pmbootstrap build --force linux-wiki-example
+ $ pmbootstrap install
+ $ pmbootstrap flasher flash_kernel
+
+El último paso flash_kernel solo es necesario si su dispositivo tiene el kernel almacenado en una partición de arranque adicional. Los dispositivos compatibles con Android/fastboot tienen una partición de este tipo, y los dispositivos Nokia Maemo/MeeGo ( N900 , etc.) normalmente no la usan. Si su dispositivo no tiene una partición de arranque, actualice la partición de su sistema o la tarjeta SD.
+
+postmarketos-update-kernelUna vez que se haya familiarizado con postmarketOS, también puede probar el . Le permite actualizar un nuevo kernel a la bootpartición del dispositivo
+ ( que no debe confundirse con la propia subpartición de arranque de postmarketOS systemp1).
+
+Cifrado de disco completo: compatibilidad con osk-sdl
+
+Nota	Nuestra aplicación de carga charging-sdlutiliza la misma pila de software que osk-sdl, por lo que seguir las instrucciones debería hacer que ambos componentes funcionen.
+Si la pantalla y la interfaz de la pantalla táctil funcionan, entonces es hora de agregar soporte para osk-sdlque pueda usar el cifrado de disco completo en el sistema de archivos raíz. 
+Las instrucciones para agregar soporte se pueden encontrar aquí: Porting osk-sdl to New Devices
+
+
