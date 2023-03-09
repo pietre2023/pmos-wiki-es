@@ -1,0 +1,90 @@
+Instalación
+
+Este artículo describe cómo instalar postmarketOS en su dispositivo.
+
+Contenido
+
+1 Introducción
+1.1	Que esperar
+1.2	Tu dispositivo
+1.3	¿Construir tu propia imagen?
+2 Usando una imagen preconstruida
+2.1	Descargar
+2.1.1 instalador
+2.1.2 raíces
+2.1.3 bota
+2.1.4 parte de arranque
+2.2	Brillante
+2.2.1 tarjeta SD
+2.2.2 Herramientas flash como Fastboot, Heimdall, etc.
+3 Ver también
+
+Introducción:
+
+Que esperar
+
+En su etapa actual, postmarketOS es para entusiastas de Linux. La experiencia no será tan pulida como ejecutar Android o iOS. Espere errores serios como llamadas que no funcionan, SMS que no llegan, despertador que no funciona, etc. No use esto en su teléfono principal si confía en su funcionalidad. Usted ha sido advertido.
+
+También en esta etapa, esperamos que sepa cómo usar una terminal Linux. A lo largo de este wiki encontrará un par de comandos con el prefijo $(o #para root). No debe ingresar ese carácter, es simplemente para indicar que los siguientes comandos están destinados a ser ingresados ​​​​/ ejecutados dentro de una terminal. Por ejemplo, el siguiente comando para enumerar el contenido del directorio de trabajo actual, lsse mencionará como:
+
+$ ls
+Tu dispositivo
+En primer lugar, abra la página de dispositivos en una nueva pestaña y busque su dispositivo. Tome nota de la categoría en la que se encuentra (principal, comunidad o pruebas). Lea las funciones disponibles en la página del dispositivo (para no tener expectativas equivocadas). Las instrucciones de instalación varían mucho según su dispositivo, así que asegúrese de leer las instrucciones de instalación específicas del dispositivo.
+
+¿Construir tu propia imagen?
+Para instalar postmarketOS, tiene dos opciones:
+
+Use una imagen preconstruida si su dispositivo está en las categorías principal o comunitaria. Lea a continuación.
+Cree su propia imagen con pmbootstrap si su dispositivo está en la categoría de prueba o si desea tener más opciones disponibles (por ejemplo, elegir una interfaz de usuario exótica). Lea el artículo de pmbootstrap .
+Usando una imagen preconstruida
+Descargar
+Abra la página de descarga y haga clic en su dispositivo. Se le presentarán directorios con nombres de interfaces de usuario . Elige uno de ellos. Luego haga clic en el directorio con la última fecha de la imagen. Ahora puede descargar los archivos de imagen.
+
+Descargue los siguientes archivos, cada uno de ellos se describe más adelante:
+
+instalador o rootfs
+arranque (si está disponible)
+bootpart (si está disponible)
+instalador
+Algunos dispositivos tienen una imagen de instalación adicional disponible. Termina -installer.img.xzy contiene la imagen de rootfs, pero envuelto en un instalador que se ejecuta en su teléfono. Lo más importante es que esto permite cifrar la instalación. Para dispositivos que arrancan desde la tarjeta SD (por ejemplo, PinePhone), también permite instalar desde la tarjeta SD al almacenamiento interno.
+
+Podrá establecer un usuario y una contraseña de cifrado durante la instalación.
+
+Descargue el instalador o la imagen de rootfs.
+
+raíces
+Todos los dispositivos tienen una imagen rootfs. Termina en el nombre del dispositivo y .img.xz, por ejemplo -pine64-pinephone.img.xz.
+
+La imagen de rootfs no está cifrada. Si desea encriptar su teléfono, pero no hay una imagen de instalación disponible para su dispositivo, puede crear su propia imagen encriptada con pmbootstrap en lugar de seguir esta guía.
+
+La imagen rootfs tiene el inicio de sesión usery la contraseña predeterminados 147147.
+
+Descargue el instalador o la imagen de rootfs.
+
+bota
+Los Android necesitan un archivo boot.img . Termina en -boot.img.xz.
+
+Descárguelo, si está disponible.
+
+parte de arranque
+Para algunos dispositivos como ASUS MeMO Pad 7, la partición raíz y de arranque están en archivos separados en lugar de combinarse en la imagen rootfs ( pmbootstrap!1871 ). El archivo que contiene la partición de arranque termina en -bootpart.img.xz.
+
+Descárguelo, si está disponible.
+
+Brillante
+tarjeta SD
+Dispositivos como PinePhone, Samsung Galaxy S II, Nokia N900, varias computadoras portátiles, etc. arrancan desde una tarjeta SD, memoria USB u otro almacenamiento externo. Encuentre el nombre con lsblkprimero y asegúrese de que sea el correcto, ya que sobrescribirá todo lo que contiene. Utilice una ruta sin número de partición al final, como /dev/mmcblk0.
+
+Luego escribe la imagen en él:
+
+$ xz --descompress --stdout ruta-a-rootfs-or-installer.img.xz | sudo dd of = /dev/mmcblk... bs = 4M estado = progreso
+Si está en Windows, consulte aquí .
+
+Espere hasta que se complete el comando y expulse la tarjeta SD. Si su dispositivo puede arrancar desde la tarjeta SD sin flashear nada en el almacenamiento interno (como el PinePhone), ahora debería poder insertarlo en su dispositivo y arrancarlo. Si ha elegido la imagen del instalador, siga sus instrucciones. La imagen de rootfs se iniciará directamente en postmarketOS. Ha terminado con la instalación de postmarketOS, ¡felicidades!
+
+Herramientas flash como Fastboot, Heimdall, etc.
+Otros dispositivos, como Android y Librem 5, necesitan ejecutar una herramienta de actualización para enviar los archivos de imagen al dispositivo mientras se encuentra en un modo de actualización especial. ¡Tenga en cuenta que esto sobrescribirá la instalación/datos existentes en su teléfono! La página del dispositivo debe dar las instrucciones detalladas. Por lo general, implica extraer las imágenes (ya que estas herramientas no pueden usar los xzarchivos comprimidos), con el unxzcomando. Luego, uno ejecuta la herramienta flash con él, por ejemplo fastboot flash ….
+
+Si faltan las instrucciones, consulte el archivo de información del dispositivo de su dispositivo o solicite ayuda en el chat . Luego agregue las instrucciones que faltan para la siguiente persona.
+
+Cuando haya terminado de actualizar los archivos, reinicie el dispositivo. Ha terminado con la instalación de postmarketOS, ¡felicidades!
